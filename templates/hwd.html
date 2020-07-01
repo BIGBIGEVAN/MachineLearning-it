@@ -1,0 +1,129 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-16">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machine Learning It</title>
+    <link rel = "stylesheet" type="text/css" href="{% static 'css/main.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"> </script>
+    <script src="http://code.jquery.com/jquery-1.6.1.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script> -->
+
+</head>
+<body>
+    <header id = "main-header">
+        <div class = "container">
+            <h1>Machine Learning It!</h1>
+        </div>
+    </header>
+
+    <nav id = "navbar">
+        <div class = "container">
+            <ul>
+                <li><a href = "{% url 'homepage' %}">Home</a></li>
+                <li><a href =  "{% url 'spp' %}">Stock Price Predict</a></li>
+                <li><a href = "{% url 'hwd' %}">Hand Written Digit</a></li>
+            </ul>
+        </div>
+    </nav>
+    <div id="hwdshowcase">
+                <canvas id="hwdcanvas" width="350" height="350"></canvas>
+    </div>
+            <script src = "{% static 'js/hwdcanvas.js' %}"></script>
+    </nav>
+    <nav id = "hwdButton">
+        <div class = "container">
+                <button onclick="location.href = '{% url 'hwd' %}' ">Reset</button>
+                <form action=""></form>
+                    <!-- <span style = "font-size: 28px;" id = 'result'> </span> -->
+                    <form action="/hwd/postDatabase" method="POST">
+                        {% csrf_token %}
+                        <label for = "predictNum">The number is: </label>
+                        <span style = "font-size: 28px;" id = 'result' name = 'predictNum'> </span>
+                        <!-- <input type  = 'text' name = 'predictNum' id = 'result'>
+                        <br>
+                        <input type="submit" value = "add to database">    -->
+                        
+                    </form>
+                    <button type = "submit" id="hwdB" name = 'run_button'>Run_script</button>
+                <script>
+                    var input;
+                    document.getElementById("hwdB").onclick = function() {hwdClick()};
+                            function hwdClick() {
+                                var canvas = document.getElementById('hwdcanvas');
+                                var ctx = canvas.getContext('2d');
+
+                                document.getElementById("hwdB").innerHTML = "YOU CLICKED ME!";
+                                tf.loadLayersModel("{% static 'js/mnistmodel/model.json' %}").then(function(model) {
+                                window.model = model;
+                                });
+                                console.log('model loaded from storage');
+                                canvasdata = ctx.getImageData(0,0,28,28).data;
+                                var input = [];
+                                for(var i = 0; i < canvasdata.length; i += 4 ){
+                                    input.push(canvasdata[i + 2]);
+                                }
+                                predict(input);
+                            }
+                            function predict(input) {
+                                if (window.model) {
+                                    window.model.predict([tf.tensor(input).reshape([1, 28, 28, 1])]).array().then(function(scores){
+                                    scores = scores[0];
+                                    predicted = scores.indexOf(Math.max(...scores));
+                                    document.getElementById("result").innerHTML =  predicted;
+                                    console.log(input);
+                                    if(predicted){
+                                    $(function(){
+                                        $.ajax({
+                                            // points to the url where your data will be posted
+                                            url:'postPredictNum',
+                                            // post for security reason
+                                            type: "POST",
+                                            // data that you will like to return 
+                                            data: {'predictNum' : predicted,
+                                                    'canvasdata': input.toString(),
+                                                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                                                },
+                                            // what to do when the call is success 
+                                            success:function(data){
+                                                console.log('success',data);
+                                            },
+                                            // what to do when the call is complete ( you can right your clean from code here)
+                                            complete:function(){},
+                                            // what to do when there is an error
+                                            error:function (xhr, textStatus, thrownError){}
+                                        });
+                                    });
+                                    }
+                                    return predicted;
+                                });
+                                
+                                } else {
+                                // The model takes a bit to load, if we are too fast, wait
+                                setTimeout(function(){predict(input)}, 50);
+                                }
+                                }
+                                
+                </script>
+
+        </div>
+    </nav>
+    <br>
+    <nav id = "Introduction">   
+        <div class = "container">
+        <p1>    
+            Welcome to "Hello World!" of Machine Learning. In this project, I used the most basic but meaningful data set in machine learning: MNIST. When we print it out they look like this:
+        </p1>
+        <br><br>
+        <p2>
+            After having a certain understanding of the data, we can design a mathematical model with high accuracy, but it is not too complicated for the machine to divide different numbers. In fact, until now (early 2020), we still cannot predict mathematically which mathematical model will achieve what effect. However, we can make predictions by looking at other people's models and my data results. Taking MNIST as an example, we can access the MNIST database on its official website to understand how different mathematical models bring us different accuracy rates. My goal is to hope that my model can achieve> 98%, and does not require much calculation time. Therefore, I chose two convolutional layers, one dropout layer and two dense layers. Finally, the accuracy of the model is about 98.5%.
+        </p2>
+        </div>
+    </nav>
+    
+
+      
+
+</body>
+</html>

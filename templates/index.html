@@ -1,0 +1,72 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-16">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machine Learning It</title>
+    <link rel = "stylesheet" type="text/css" href="{% static 'css/main.css' %}">
+</head>
+<body>
+    <header id = "main-header">
+        <div class = "container">
+            <h1>Machine Learning It!</h1>
+        </div>
+    </header>
+
+    <nav id = "navbar">
+        <div class = "container">
+            <ul>
+                <li><a href = "{% url 'homepage' %}">Home</a></li>
+                <li><a href = "{% url 'spp' %}">Stock Price Predict</a></li>
+                <li><a href = "{% url 'hwd' %}">Hand Written Digit</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section id = "warningbar">
+        <div class = "container">
+            <h1>Warning!</h1>
+            <p>
+                All information and data provided or calculated on this website is for learning or sharing purposes only and should not be used as a basis for any personal investment. Please be careful before using this website!
+            </p>
+        </div>
+    </section>
+
+    <section id = "SPPshowcase">
+        <div class = "container">
+            <h1>Stock Price Predict</h1>
+            <p>
+                Predict stock by using LSTM<br>
+                Any stock by one click<br>
+            </p> 
+            <div class = "infolist">
+            <ul>
+                <li><a href = "{% url 'spp' %}">Learn more ></a></li>
+                <li><a href = "#">Try ></a></li>
+            </ul>
+            </div>
+        </div>
+    </section>
+
+    <section id = "HWDshowcase">
+        <div class = "container">
+            <h1>Hand Written Digit</h1>
+            <p>
+                Draw digit number 0-9 by a mouse<br>
+                Number prediction base on multiple con2d layers<br>
+            </p>
+            <div class = "infolist">
+            <ul>
+                <li><a href = "spp.html">Learn more ></a></li>
+                <li><a href = "#">Try ></a></li>
+            </ul>
+            </div>
+            <div class = "gifexample">
+                <img src="{% static 'gif/hwdExample.gif' %}" >
+
+            </div>
+        </div>
+    </section>
+</body>
+</html>

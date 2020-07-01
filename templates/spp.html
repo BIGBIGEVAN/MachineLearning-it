@@ -1,0 +1,210 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-16">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machine Learning It</title>
+    <!-- Import TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.0.0/dist/tf.min.js"></script>
+    <!-- Import tfjs-vis -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.0.2/dist/tfjs-vis.umd.min.js"></script>
+    <script src = "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js"></script>
+    <link rel = "stylesheet" type="text/css" href="{% static 'css/main.css' %}">
+</head>
+<body>
+    <header id = "main-header">
+        <div class = "container">
+            <h1>Machine Learning It!</h1>
+        </div>
+    </header>
+
+    <nav id = "navbar">
+        <div class = "container">
+            <ul>
+                <li><a href = "{% url 'homepage' %}">Home</a></li>
+                <li><a href =  "{% url 'spp' %}">Stock Price Predict</a></li>
+                <li><a href = "{% url 'hwd' %}">Hand Written Digit</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section id = "warningbar">
+        <div class = "container">
+            <h1>Warning!</h1>
+            <p>
+                All information and data provided or calculated on this website is for learning or sharing purposes only and should not be used as a basis for any personal investment. Please be careful before using this website!
+            </p>
+        </div>
+    </section>
+
+    <nav id = "inputbar">
+        <div class = "container">
+        <form action="/spp/userinput" method = "post">
+            {% csrf_token %}
+            <label for="stocktextbox">Stock symbol:</label><br>
+            <input type="text" id="stocktextbox" name="stocksymbol" value="AAPL"><br>
+            <label for="trainSdatebox">Training start date(dd/mm/yyyy):</label><br>
+            <input type="date" id = "trainSdatebox" name = "trainSdate"/><br>
+            <label for="trainEdate">Training end date:(dd/mm/yyyy)</label><br>
+            <input type="date" id ="trainEdate" name = "trainEdate"/><br>
+            <label for="validationtime">Validation time:</label>
+                <select id="validationtime" name = "validationtime">
+                <option value="30">30  days</option>
+                <option value="90">90  days</option>
+                <option value="180">180 days</option>
+                <option value="360 days">360 days</option>
+                </select><br>
+            <input type="submit" value = "Run_script">
+        </form>
+        <button onclick="location.href = '{% url 'spp' %}' ">Reset</button>    
+            <br>
+        </div>
+    </nav>
+    <div class = "container">
+        <canvas id="myChart" width="400"></canvas>
+    </div>
+    {% if stockdata %}
+
+    <script type="text/javascript">
+        data_from_django = {{ stockdata|safe }};   
+        console.log(Object.values(data_from_django.Date));  
+        var ctx = document.getElementById('myChart').getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Object.values(data_from_django.Date),
+                datasets: [{
+                    label: '$USD',
+                    data: Object.values(data_from_django.Close),
+                    borderWidth: 3,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    fill:false,
+                }]
+            },
+            options: {
+                animation:{
+                    duration: 1500,
+                },
+                scales: {
+                    yAxes: [{
+                        stacked: true
+                    }]
+                        }
+                    }
+        });
+async function getData() {
+  const carsDataReq = data_from_django.Close; 
+  const arrayData = Object.entries(carsDataReq);
+  const cleaned = arrayData.map(x => ({
+    closePrice: x[1],
+    days: parseInt(x[0],10),
+  }))
+  return cleaned;
+}
+async function run() {
+  // Load and plot the original input data that we are going to train on.
+  const data = await getData();
+  const values = data.map(d => ({
+    x: d.days,
+    y: d.closePrice
+  }));
+
+  tfvis.render.scatterplot(
+    {name: 'Days v Price'},
+    {values}, 
+    {
+      xLabel: 'days',
+      yLabel: 'close price',
+      height: 300
+    }
+  );
+
+  // More code will be added below
+  function createModel() {
+  // Create a sequential model
+  const model = tf.sequential(); 
+  
+  // Add a single input layer
+  model.add(tf.layers.lstm({inputShape: [2], units: 50,returnSequences: true}));
+  model.add(tf.layers.lstm({units: 50,returnSequences: false, useBias: true}));
+  model.add(tf.layers.dense({units: 25, useBias: true}));
+  // Add an output layer
+  model.add(tf.layers.dense({units: 1, useBias: true}));
+
+  return model;
+    }
+    const model = createModel();  
+tfvis.show.modelSummary({name: 'Model Summary'}, model);
+function convertToTensor(data) {
+  // Wrapping these calculations in a tidy will dispose any 
+  // intermediate tensors.
+  
+  return tf.tidy(() => {
+    // Step 2. Convert data to Tensor
+    const inputs = data.map(d => d.days)
+    const labels = data.map(d => d.closePrice)
+
+    const inputTensor = tf.tensor2d(inputs, [inputs.length, 1]);
+    const labelTensor = tf.tensor2d(labels, [labels.length, 1]);
+
+    //Step 3. Normalize the data to the range 0 - 1 using min-max scaling
+    const inputMax = inputTensor.max();
+    const inputMin = inputTensor.min();  
+    const labelMax = labelTensor.max();
+    const labelMin = labelTensor.min();
+
+    const normalizedInputs = inputTensor.sub(inputMin).div(inputMax.sub(inputMin));
+    const normalizedLabels = labelTensor.sub(labelMin).div(labelMax.sub(labelMin));
+
+    return {
+      inputs: inputs,
+      labels: normalizedLabels,
+      // Return the min/max bounds so we can use them later.
+      inputMax,
+      inputMin,
+      labelMax,
+      labelMin,
+    }
+  });  
+}
+async function trainModel(model, inputs, labels) {
+  // Prepare the model for training.  
+  model.compile({
+    optimizer: tf.train.adam(),
+    loss: tf.losses.meanSquaredError,
+    metrics: ['mse'],
+  });
+  
+  const batchSize = 32;
+  const epochs = 50;
+  
+  return await model.fit([inputs, labels], {
+    batchSize,
+    epochs,
+    shuffle: true,
+    callbacks: tfvis.show.fitCallbacks(
+      { name: 'Training Performance' },
+      ['loss', 'mse'], 
+      { height: 200, callbacks: ['onEpochEnd'] }
+    )
+  });
+}
+const tensorData = convertToTensor(data);
+const {inputs, labels} = tensorData;
+    
+// Train the model  
+await trainModel(model, inputs, labels);
+console.log('Done Training');
+//
+}
+
+
+document.addEventListener('DOMContentLoaded', run);
+    </script>
+    {% endif %}
+</body>
+</html>
+
+
+

@@ -5,7 +5,7 @@ import json
 import pandas_datareader as web 
 import numpy as np 
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler 
+#from sklearn.preprocessing import MinMaxScaler 
 def sppView(request):
     return render(request,'spp.html')
 

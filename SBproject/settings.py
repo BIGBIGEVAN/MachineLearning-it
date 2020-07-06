@@ -25,7 +25,7 @@ SECRET_KEY = 'utct&-v73ge(n75*vr&_1a^-z-uo3!s4yivr($5q*!jd-)^j6s'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['192.168.1.106','192.168.1.110','localhost','127.0.0.1','maclearningit.com'  ]
 
 
 # Application definition

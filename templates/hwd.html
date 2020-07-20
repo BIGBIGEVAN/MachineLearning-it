@@ -53,12 +53,58 @@
                             function hwdClick() {
                                 var canvas = document.getElementById('hwdcanvas');
                                 var ctx = canvas.getContext('2d');
+                                //In this part is to center and normalize the picture on left-top conner for more accuate predict
+                                leftcolLoop: for(i=3; i<28; i++){
+                                    for(j=3; j<28;j++){
+                                        if (ctx.getImageData(i,j,1,1).data[3]>= 100){
+                                                var leftcol = i;
+                                                break leftcolLoop;
+                                        }
+                                    }
+                                }
+                                righttcolLoop: for(i=27; i>0; i--){
+                                    for(j=1; j<28;j++){
+                                        if (ctx.getImageData(i,j,1,1).data[3]>= 100){
+                                                var rightcol = i;
+                                                break righttcolLoop;
+                                        }
+                                    }
+                                }
 
+                                toprowLoop: for(j=2; j<28; j++){
+                                    for(i=3; i<28;i++){
+                                        if (ctx.getImageData(i,j,1,1).data[3]>= 100){
+                                                var toprow = j;
+                                                break toprowLoop;
+                                        }
+                                    }
+                                }
+                                botrowLoop: for(j=27; j>0; j--){
+                                    for(i=1; i<28;i++){
+                                        if (ctx.getImageData(i,j,1,1).data[3]>= 100){
+                                                var botrow = j;
+                                                break botrowLoop;
+                                        }
+                                    }
+                                }
+
+                                //    
                                 document.getElementById("hwdB").innerHTML = "YOU CLICKED ME!";
                                 tf.loadLayersModel("{% static 'js/mnistmodel/model.json' %}").then(function(model) {
                                 window.model = model;
                                 });
                                 console.log('model loaded from storage');
+                                if(leftcol && rightcol && toprow && botrow){
+                                    var smallcanvasdata = ctx.getImageData(leftcol-2,toprow-1,rightcol-leftcol+2,botrow-toprow+2);
+                                    console.log(smallcanvasdata.width);
+                                    console.log(smallcanvasdata.height);
+                                    // ctx.fillStyle = 'red';
+                                    ctx.fillRect(0, 0, 28, 28);
+                                    // x_scale = 18/(rightcol-leftcol+4);
+                                    // y_scale = 22/(botrow-toprow+4);
+                                    // normalizedcanvasdata = scaleImageData(smallcanvasdata,x_scale,y_scale);
+                                    ctx.putImageData(smallcanvasdata,14-(rightcol-leftcol+2)/2,14-(botrow-toprow+2)/2);
+                                }
                                 canvasdata = ctx.getImageData(0,0,28,28).data;
                                 var input = [];
                                 for(var i = 0; i < canvasdata.length; i += 4 ){
@@ -66,6 +112,28 @@
                                 }
                                 predict(input);
                             }
+                            // function scaleImageData(imageData, width_scale,height_scale){
+                            //     var newCanvas = $("<canvas>")
+                            //     .attr("width", imageData.width)
+                            //     .attr("height", imageData.height)[0];
+                            //     // console.log('imageData.width' =imageData.width );
+                            //     // console.log('imageData.height' =imageData.height );
+                            //     newCanvas.getContext("2d").putImageData(imageData, 0, 0);
+
+                            //     // Second canvas, for scaling
+                            //     var scaleCanvas = $("<canvas>")
+                            //     .attr("width", 16)
+                            //     .attr("height", 22)[0];
+
+                            //     var scaleCtx = scaleCanvas.getContext("2d");
+
+                            //     scaleCtx.scale(width_scale, height_scale);
+                            //     scaleCtx.drawImage(newCanvas, 0, 0);
+
+                            //     var scaledImageData =  scaleCtx.getImageData(0, 0, scaleCanvas.width, scaleCanvas.height);
+                            //     console.log(scaledImageData .width + 'h'+ scaledImageData .height)
+                            //     return scaledImageData;
+                            // }
                             function predict(input) {
                                 if (window.model) {
                                     window.model.predict([tf.tensor(input).reshape([1, 28, 28, 1])]).array().then(function(scores){
